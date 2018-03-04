@@ -5,6 +5,8 @@ from quickstart import get_credentials
 from quickstart import create_event
 from quickstart import make_calendar
 from quickstart import add_user
+from quickstart import send_email
+from quickstart import find_id
 
 import httplib2
 import os
@@ -16,7 +18,7 @@ from oauth2client.file import Storage
 
 import datetime
 
-
+BOT_ACCESS_TOKEN = config.BOT_ACCESS_TOKEN
 
 class SlackBot(object):
     '''
@@ -28,9 +30,10 @@ class SlackBot(object):
     def __init__(self, access_token):
         self.sc = SlackClient(access_token)
         #name of the slack
-        #self.team_calendar = ""
+        self.team_calendar = ""
+        self.calendar_id = ""
         #making the calendar with that slack's name
-        make_calendar("dogs")
+       
 
     def rtm_socket_connected(self):
         '''
@@ -78,18 +81,14 @@ class SlackBot(object):
             
             elif message == "see event":
                 self.send_message("getting the calendars", channel)
-                print('a0')
                 credentials = get_credentials()
-                print('a1')
                 http = credentials.authorize(httplib2.Http())
-                print('a2')
                 service = discovery.build('calendar', 'v3', http=http)
-                print('a3')
                 now = datetime.datetime.utcnow().isoformat() + 'Z' # 'Z' indicates UTC time
-                print('a4')
-                print('Getting the upcoming all events')
+                
+                print('Getting the upcoming 5 events')
                 eventsResult = service.events().list(
-                    calendarId='primary', timeMin=now, maxResults=10, singleEvents=True,
+                    calendarId=self.calendar_id, timeMin=now, maxResults=5, singleEvents=True,
                     orderBy='startTime').execute()
                 events = eventsResult.get('items', [])
 
@@ -103,9 +102,8 @@ class SlackBot(object):
                
             elif message == "make event":
                 self.send_message("making the calendars", channel)
-                print('c0')
-                create_event()
-                print('c1')
+                create_event(self.calendar_id,"Disney", "Disney", "day")
+                
 
 
     def activate(self):
@@ -113,7 +111,17 @@ class SlackBot(object):
         Starts the bot, which monitors all messages events from channels it is a
         part of and then sends them to the message handler.
         '''
+        #making calendar for all
+        make_calendar("boba")
+        self.team_calendar = "boba"
+        self.calendar_id = find_id(self.team_calendar)
 
+        #adding users to this calendar
+        user_emails = []
+        alluser = send_email(self,user_emails)
+        for user in alluser:
+            add_user(user, self.team_calendar)
+       
         if self.rtm_socket_connected():
             print("Bot is up and running\n")
 

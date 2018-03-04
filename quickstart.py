@@ -8,6 +8,14 @@ from oauth2client import tools
 from oauth2client.file import Storage
 
 import datetime
+import csv
+
+try:
+    with open('names.csv') as csvfile:
+       reader = csv.DictReader(csvfile)
+       for row in reader:
+            print(row['first_name'],row['last_name'])
+
 
 try:
     import argparse
@@ -66,7 +74,18 @@ def get_credentials():
         print('b13')
     return credentials
 
-def create_event():
+def send_email(self,user_emails):
+        store = self.sc.api_call("users.list")
+
+        user_emails = []
+        for users in store["members"]:
+            if "email" in users["profile"]:
+                print(users["profile"]["email"])
+                user_emails.append(users["profile"]["email"])
+                
+        return user_emails
+
+def create_event(calendarid, name_event, location, startday):
     # Refer to the Python quickstart on how to setup the environment:
 # https://developers.google.com/google-apps/calendar/quickstart/python
 # Change the scope to 'https://www.googleapis.com/auth/calendar' and delete any
@@ -77,23 +96,19 @@ def create_event():
 
 
     event = {
-      'summary': 'Google I/O 2015',
-      'location': '800 Howard St., San Francisco, CA 94103',
+      'summary': name_event,
+      'location': location,
       'description': 'A chance to hear more about Google\'s developer products.',
       'start': {
-        'dateTime': '2018-03-03T09:00:00-07:00',
+        'dateTime': '2018-03-03T00:00:00-07:00',
         'timeZone': 'America/Los_Angeles',
       },
       'end': {
-        'dateTime': '2018-03-03T17:00:00-07:00',
+        'dateTime': '2018-03-04T17:00:00-07:00',
         'timeZone': 'America/Los_Angeles',
       },
       'recurrence': [
         'RRULE:FREQ=DAILY;COUNT=2'
-      ],
-      'attendees': [
-        {'email': 'lpage@example.com'},
-        {'email': 'sbrin@example.com'},
       ],
       'reminders': {
         'useDefault': False,
@@ -104,7 +119,7 @@ def create_event():
       },
     }
 
-    event = service.events().insert(calendarId='primary', body=event).execute()
+    event = service.events().insert(calendarId=calendarid, body=event).execute()
     print ('Event created: %s' %  ( event.get('htmlLink') ))
     
 def make_calendar(name):
@@ -186,6 +201,7 @@ def main():
 if __name__ == '__main__':
    # main()
     #create_event()
-    make_calendar("puppies")
+    #make_calendar("puppies")
     #find_id("favorites")
+    create_event("primary","BTS", "location", "day")
     add_user("hannae.sya17@gmail.com","puppies")
