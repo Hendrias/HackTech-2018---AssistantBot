@@ -59,18 +59,18 @@ def get_credentials():
         print('b13')
     return credentials
 
-def find_eventid(summary, calid):
+def find_eventid(eventname, calid):
     credentials = get_credentials()
     http = credentials.authorize(httplib2.Http())
     service = discovery.build('calendar', 'v3', http=http)
 
-    answer = {}
     page_token = None
-    ev = service.events().list(calendarId= calid , pageToken=page_token).execute()
-    for events in ev['items']:
-        answer[events['summary'] ] = calendar_list_entry['id']
-   
-    return answer[summary]
+    answer = {}
+    events = service.events().list(calendarId=calid, pageToken=page_token).execute()
+    for event in events['items']:
+        answer[ event['summary'] ] = event['id']
+    
+    return answer[eventname]
 
 def send_email(self,user_emails):
         store = self.sc.api_call("users.list")
@@ -137,7 +137,7 @@ def create_eventCSV(calendarid):
     service = discovery.build('calendar', 'v3', http=http)
 
     your_list = []
-    for col in csv.reader(open('test.csv', encoding='utf-8-sig'), delimiter =',', quotechar = '"'):
+    for col in csv.reader(open('events.csv', encoding='utf-8-sig'), delimiter =',', quotechar = '"'):
         your_list.append(col)
     name_event = your_list[0][0]
     print(name_event)
@@ -150,8 +150,8 @@ def create_eventCSV(calendarid):
    # original: 2018-03-03T00:00:00-07:00
    # end: 2018-03-04T17:00:00-07:00
     
-    startday+='T00:00:00-07:00'
-    endday+='T17:00:00-07:00'
+   # startday+='T00:00:00-07:00'
+    #endday+='T17:00:00-07:00'
        
     event = {
       'summary': name_event,
@@ -232,6 +232,15 @@ def add_user(name, calendar):
     created_rule = service.acl().insert(calendarId= cal_id , body=rule).execute()
     print (created_rule['id'])
 
+#removing events
+def remove_event(eventname, calendarid):
+    credentials = get_credentials()
+    http = credentials.authorize(httplib2.Http())
+    service = discovery.build('calendar', 'v3', http=http)
+
+    event_id = find_eventid(eventname, calendarid) 
+    service.events().delete(calendarId=calendarid, eventId=eventname).execute()
+
 def main():
     """Shows basic usage of the Google Calendar API.
 
@@ -265,5 +274,5 @@ if __name__ == '__main__':
     # original: 2018-03-03T00:00:00-07:00
    # end: 2018-03-04T17:00:00-07:00
     create_eventCSV("primary")
-    remove_event("title", "primary")
+    #remove_event("Flower", "primary")
     #add_user("hannae.sya17@gmail.com","puppies")

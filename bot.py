@@ -103,6 +103,9 @@ class SlackBot(object):
             elif message == "make event":
                 self.send_message("making the calendars", channel)
                 create_event(self.calendar_id,"Disney", "Disney", "day")
+            elif message == "remove event":
+                self.send_message("removing event")
+                remove_event("Disney")
                 
 
 
