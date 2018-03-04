@@ -10,12 +10,6 @@ from oauth2client.file import Storage
 import datetime
 import csv
 
-try:
-    with open('names.csv') as csvfile:
-       reader = csv.DictReader(csvfile)
-       for row in reader:
-            print(row['first_name'],row['last_name'])
-
 
 try:
     import argparse
@@ -30,8 +24,6 @@ CLIENT_SECRET_FILE = 'client_secret.json'
 APPLICATION_NAME = 'Google Calendar API Python Quickstart'
 
 
-
-
 def get_credentials():
     """Gets valid user credentials from storage.
 
@@ -41,29 +33,22 @@ def get_credentials():
     Returns:
         Credentials, the obtained credential.
     """
-    print('b0')
+   
     home_dir = os.path.expanduser('~')
-    print('b1')
     credential_dir = os.path.join(home_dir, '.credentials')
-    print('b2')
+    
     if not os.path.exists(credential_dir):
-        print('b3')
         os.makedirs(credential_dir)
-        print('b4')
     credential_path = os.path.join(credential_dir,
                                    'calendar-python-quickstart.json')
-    print('b5')
 
     store = Storage(credential_path)
-    print('b6')
     credentials = store.get()
-    print('b7')
+   
     if not credentials or credentials.invalid:
-        print('b8')
+        
         flow = client.flow_from_clientsecrets(CLIENT_SECRET_FILE, SCOPES)
-        print('b9')
         flow.user_agent = APPLICATION_NAME
-        print('b10')
         if flags:
             credentials = tools.run_flow(flow, store, flags)
             print('b11')
@@ -73,6 +58,19 @@ def get_credentials():
         print('Storing credentials to ' + credential_path)
         print('b13')
     return credentials
+
+def find_eventid(summary, calid):
+    credentials = get_credentials()
+    http = credentials.authorize(httplib2.Http())
+    service = discovery.build('calendar', 'v3', http=http)
+
+    answer = {}
+    page_token = None
+    ev = service.events().list(calendarId= calid , pageToken=page_token).execute()
+    for events in ev['items']:
+        answer[events['summary'] ] = calendar_list_entry['id']
+   
+    return answer[summary]
 
 def send_email(self,user_emails):
         store = self.sc.api_call("users.list")
@@ -85,7 +83,7 @@ def send_email(self,user_emails):
                 
         return user_emails
 
-def create_event(calendarid, name_event, location, startday):
+def create_event(calendarid, name_event, location, startday, endday):
     # Refer to the Python quickstart on how to setup the environment:
 # https://developers.google.com/google-apps/calendar/quickstart/python
 # Change the scope to 'https://www.googleapis.com/auth/calendar' and delete any
@@ -95,16 +93,22 @@ def create_event(calendarid, name_event, location, startday):
     service = discovery.build('calendar', 'v3', http=http)
 
 
+
+   # original: 2018-03-03T00:00:00-07:00
+   # end: 2018-03-04T17:00:00-07:00
+    startday += "T00:00:00-07:00"
+    endday += "T17:00:00-07:00"
+    
     event = {
       'summary': name_event,
       'location': location,
       'description': 'A chance to hear more about Google\'s developer products.',
       'start': {
-        'dateTime': '2018-03-03T00:00:00-07:00',
+        'dateTime': startday,
         'timeZone': 'America/Los_Angeles',
       },
       'end': {
-        'dateTime': '2018-03-04T17:00:00-07:00',
+        'dateTime': endday,
         'timeZone': 'America/Los_Angeles',
       },
       'recurrence': [
@@ -121,6 +125,61 @@ def create_event(calendarid, name_event, location, startday):
 
     event = service.events().insert(calendarId=calendarid, body=event).execute()
     print ('Event created: %s' %  ( event.get('htmlLink') ))
+
+
+def create_eventCSV(calendarid):
+    # Refer to the Python quickstart on how to setup the environment:
+# https://developers.google.com/google-apps/calendar/quickstart/python
+# Change the scope to 'https://www.googleapis.com/auth/calendar' and delete any
+# stored credentials.
+    credentials = get_credentials()
+    http = credentials.authorize(httplib2.Http())
+    service = discovery.build('calendar', 'v3', http=http)
+
+    your_list = []
+    for col in csv.reader(open('test.csv', encoding='utf-8-sig'), delimiter =',', quotechar = '"'):
+        your_list.append(col)
+    name_event = your_list[0][0]
+    print(name_event)
+    startday = your_list[0][1]
+    endday = your_list[0][2]
+    location = your_list[0][3]
+
+    #startday.replace(" ","")
+    #endday.replace(" ","")
+   # original: 2018-03-03T00:00:00-07:00
+   # end: 2018-03-04T17:00:00-07:00
+    
+    startday+='T00:00:00-07:00'
+    endday+='T17:00:00-07:00'
+       
+    event = {
+      'summary': name_event,
+      'location': location,
+      'description': 'A chance to hear more about Google\'s developer products.',
+      'start': {
+        'dateTime': startday,
+        'timeZone': 'America/Los_Angeles',
+      },
+      'end': {
+        'dateTime': endday,
+        'timeZone': 'America/Los_Angeles',
+      },
+      'recurrence': [
+        'RRULE:FREQ=DAILY;COUNT=2'
+      ],
+      'reminders': {
+        'useDefault': False,
+        'overrides': [
+          {'method': 'email', 'minutes': 24 * 60},
+          {'method': 'popup', 'minutes': 10},
+        ],
+      },
+    }
+
+    event = service.events().insert(calendarId=calendarid, body=event).execute()
+    print ('Event created: %s' %  ( event.get('htmlLink') ))
+
     
 def make_calendar(name):
     print(name)
@@ -203,5 +262,8 @@ if __name__ == '__main__':
     #create_event()
     #make_calendar("puppies")
     #find_id("favorites")
-    create_event("primary","BTS", "location", "day")
-    add_user("hannae.sya17@gmail.com","puppies")
+    # original: 2018-03-03T00:00:00-07:00
+   # end: 2018-03-04T17:00:00-07:00
+    create_eventCSV("primary")
+    remove_event("title", "primary")
+    #add_user("hannae.sya17@gmail.com","puppies")
